@@ -1,0 +1,184 @@
+---
+title: "A Problem with Presidents"
+author: "Paddy Lin"
+date: "2026-10-30"
+output: pdf_document
+---
+
+## Introduction
+This report finds the longest and shorted lived presidents based on how many days they lived which can be seen in the tables below. The methodology used includes both a table for longest lived presidents, including and excluding current living presidents. The only different between the two is the inclusion of Joe Biden in the longest-lived list. It then finds the statistical summary of the data then plots the data into a histogram.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  fig.align = "center"
+)
+
+library(lubridate)
+library(gt)
+library(DescTools)
+```
+
+```{r}
+#imports all of the data
+presidents <- read.csv("presidential_data.csv") 
+president_name <- presidents$name
+birth_date <- mdy(presidents$birth)
+death_date <- mdy(presidents$death)
+
+#creates the needed data
+year_of_birth <- year(birth_date)
+lived_days <- as.integer(death_date - birth_date)
+lived_months <- lived_days/30.44
+lived_years <- year(death_date) - year(birth_date)
+
+#finds the longest and shortest lived presidents
+df <- data.frame(president_name, lived_days)
+longest <- df[order(-df$lived_days),][1:10,]
+# longest
+shortest <- df[order(df$lived_days),][1:10,]
+# shortest
+```
+
+```{r}
+#repeats for current living presidents
+death_date_l <- replace(death_date, is.na(death_date), Sys.Date())
+lived_days_l <- as.integer(death_date_l - birth_date)
+df_l <- data.frame(president_name, lived_days_l)
+longest_l <- df_l[order(-df_l$lived_days_l),][1:10,]
+shortest_l <- df_l[order(df_l$lived_days_l),][1:10,]
+```
+
+\newpage
+```{r}
+#makes a table of the longest living presidents
+longest |> 
+  gt() |>
+  tab_header(
+    title = md("**Longest Lived Presidents**"),
+    subtitle = md("(Excludes Living)")
+  ) |>
+  
+  cols_label(
+    president_name = "President",
+    lived_days = "Days Lived"
+  )|>
+  tab_options(
+    heading.title.font.size = "large",
+    heading.subtitle.font.size = "small",
+    latex.use_longtable = TRUE
+  )
+```
+
+```{r}
+longest_l |> 
+  gt() |>
+  tab_header(
+    title = md("**Longest Lived Presidents**"),
+    subtitle = md("(Includes Living)")
+  ) |>
+  
+  cols_label(
+    president_name = "President",
+    lived_days_l = "Days Lived"
+  )|>
+  tab_options(
+    heading.title.font.size = "large",
+    heading.subtitle.font.size = "small",
+    latex.use_longtable = TRUE
+  )
+```
+
+```{r}
+shortest |> 
+  gt() |>
+  tab_header(
+    title = md("**Shortest Lived Presidents**"),
+    # subtitle = md("(Excludes Living)")
+  ) |>
+  
+  cols_label(
+    president_name = "President",
+    lived_days = "Days Lived"
+  )|>
+  tab_options(
+    heading.title.font.size = "large",
+    latex.use_longtable = TRUE
+  )
+```
+
+```{r}
+# shortest_l |> 
+#   gt() |>
+#   tab_header(
+#     title = md("**Shortest Lived Presidents**"),
+#     subtitle = md("(Includes Living)")
+#   ) |>
+#   
+#   cols_label(
+#     president_name = "President",
+#     lived_days = "Days Lived"
+#   )
+```
+\newpage
+
+```{r}
+#finds the statistical summaries of the data
+#there is no mode and weighted average does not make sense in this context so they have been excluded
+mean_lived = mean(lived_days, na.rm = TRUE)
+median_lived = median(lived_days, na.rm = TRUE)
+# mode_lived = Mode(lived_days, na.rm = TRUE)
+max_lived = max(lived_days, na.rm = TRUE)
+min_lived = min(lived_days, na.rm = TRUE)
+sd_lived = SD(lived_days, na.rm = TRUE)
+
+#makesa data frame of the data
+summary <- data.frame(stats = c("Mean", 
+                                "Median", 
+                                "Maximum", 
+                                "Minimum", 
+                                "Standard Deviation"), 
+                      vals = c( mean_lived, 
+                                median_lived, 
+                                max_lived, 
+                                min_lived, 
+                                sd_lived))
+
+#creates a table of the statistic sums
+summary |> gt() |>
+  tab_header(
+    title = md("**President Statistics**"),
+    subtitle = md("(Based on Lived Days)")
+  )|>
+  cols_label(
+    stats = "Statistic",
+    vals = "Value"
+  )|>
+  tab_options(
+    heading.title.font.size = "large",
+    latex.use_longtable = TRUE
+  )
+```
+
+```{r}
+#makes a histogram
+hist(lived_days[!is.na(lived_days)],
+      main = "Histogram of Presidential Lifespan",
+      xlab = "Days Lived")
+
+#plots the mean and the median
+abline(v = mean_lived,   col = "blue",  lwd = 3)
+abline(v = median_lived,   col = "red",  lwd = 3)
+
+#makes a legend of the data
+legend("topright",
+       legend = c("Mean", "Median"),
+       col = c("blue", "red"),
+       lwd = 3,
+       cex = 0.7)
+```
+
+## Conclusion
+Based on the conclusions found in the report, the longest lived president is Jimmy Carter and the shortest is John F. Kennedy. The data also appears to the skewed to the right based on both the histogram as well as the mean being higher than the median.
